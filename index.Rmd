@@ -182,3 +182,12 @@ knitr::kable(mvp, align = c("r", "l")) %>%
                 full_width = F) %>%
   column_spec(2, bold = TRUE, color = "white", background = "red3")
 ```
+
+
+
+
+
+
+
+
+
