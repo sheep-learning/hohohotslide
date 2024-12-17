@@ -1,67 +1,35 @@
 ---
-title: "Xmas Team Tournament"
-author: "NN Sheep"
-date: "2024-12-07"
-output: html_document
+title: "HoHoHotSlide Team Tournament"
+author: "(by NN Sheep)"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: 
+      version: 4
+      bg: "#FFFFFF"
+      fg: "#cd0000" 
+      primary: "forestgreen"
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+      code_font:
+        google: 
+          # arguments to sass::font_google() 
+          family: JetBrains Mono
+          local: false
+    vertical_layout: fill
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
+library(knitr)
+library(flexdashboard)
+library(RColorBrewer)
+library(plotly)
 library(kableExtra)
-```
-
-```{r}
-getCars <- function(data, match, bracket){
-  # find common cars for a given set of players
-  data %>%
-    filter(Bracket == bracket) %>%
-    filter(Team %in% match) %>%
-    pivot_longer(cols = Ace:Wingman, names_to = 'Car', values_to = 'Rank') %>%
-    pivot_wider(id_cols = -c(Bracket,Team), names_from = Name, values_from = Rank) %>%
-    filter(.[[2]]==.[[3]] & .[[2]]==.[[4]] & .[[2]]!="NULL")
-}
-
-getMatchups <- function(data,teams){
-  
-  # initialisations
-  cars <- list()
-  n <- c()
-  
-  for(i in 1:6){
-  # find matches
-  tmp <- getCars(data,teams,i)
-  # assign to list
-  cars[[i]] = paste(tmp[[2]],tmp$Car)
-  # assign numbers to vector
-  n[i] = nrow(tmp)
-  }
-
-  # initialise blank df for cars
-  matches <- tibble(
-    Captains        = rep('',max(n)),
-    `Vice Captains` = rep('',max(n)),
-    `Pool 3`        = rep('',max(n)),
-    `Pool 4`        = rep('',max(n)),
-    `Pool 5`        = rep('',max(n)),
-    `Pool 6`        = rep('',max(n))
-  )
-  
-  for(i in 1:6){
-    matches[1:n[i],i] <- cars[[i]]
-  }
-  
-  return(matches)
-}
-
-
-getResults <- function(data, team){
-  data %>%
-    select(Player = names(.[team*2-1]),
-           Points = names(.[team*2])) %>%
-    mutate(Team = rep(names(data[team*2-1]),6), .before=1) %>%
-    return()
-}
+load('Functions.RData')
 ```
 
 ```{r}
@@ -74,11 +42,9 @@ teams <- tibble(
   `Team Tattoo` = c('TaTToo', 'KenDan', 'KORA', 'FERYX', 'Ranger Robert', 'Adopt'),
   `Team Zest`   = c('Zest', 'Kalaginho', 'Super7', 'Ant', 'Walter', 'Linsyuanyu'),
 )
-```
 
-```{r}
 # import sheet
-data <- read_csv('v2_xmas_data.csv') %>%
+data <- read_csv('data/v2_xmas_data.csv') %>%
   rename(Name = `In-game name`,
          League = `What is the highest league you have reached?`) %>%
   select(-c(1,3)) %>%
@@ -93,44 +59,19 @@ data <- read_csv('v2_xmas_data.csv') %>%
                            teams$`Team Ridge` ~ 4,
                            teams$`Team Tattoo` ~ 5,
                            teams$`Team Zest` ~ 6,
+                           ),
+         Colour = case_match(Name, 
+                           teams$`Team Diana` ~ 'lightgreen',
+                           teams$`Team Jon` ~ 'orange',
+                           teams$`Team Mo` ~ 'magenta',
+                           teams$`Team Ridge` ~ 'gold',
+                           teams$`Team Tattoo` ~ 'skyblue',
+                           teams$`Team Zest` ~ 'red3',
                            ), .after = 1) %>%
   arrange(Bracket, Team)
-
-perms <- read_csv('6perms.csv', col_names = F) %>% as.matrix()
 ```
 
-```{r}
-# ## CHECK MATCHES ##
-# 
-# get number of permutations
-n = 6 # set size
-r = 3 # subset size
-nperms = factorial(n) / (factorial(r)*factorial(n-r))
-
-# initialise vector for identifying cases of zero matches found
-all_no_match = rep(0,n)
-
-for(i in 1:n){
-  # filter data and create match vector
-  no_match = rep(0,nperms)
-
-  # loop through all possible perms and filter non-matched cars
-  for(j in 1:nperms){
-    idx <- perms[j,] %>% unname()
-    tmp <- getCars(data, idx, i)
-    if(nrow(tmp)==0){
-      no_match[j] <- 1
-      #print(names(select(tmp,2:4)))
-      }
-  }
-  all_no_match[i] <- sum(no_match)
-}
-```
-
-
-# Day 1 
-
-## Cars
+# Day 1 - Factory
 
 ```{r}
 # Day 1 matches
@@ -139,10 +80,38 @@ bot <- c(4,5,6)
 ```
 
 ```{r}
-getMatchups(data,top)
-```
-```{r}
-getMatchups(data,bot)
+# read in points per team
+day1_raw <- read_csv('data/v2_xmas_results - Day1.csv') 
+
+day1_results <- bind_rows(getResults(day1_raw,1),
+                          getResults(day1_raw,2),
+                          getResults(day1_raw,3),
+                          getResults(day1_raw,4),
+                          getResults(day1_raw,5),
+                          getResults(day1_raw,6)) 
+
+day1_positions <- day1_results %>%
+  mutate(Position = case_match(Points, 
+                               3 ~ '(1st)',
+                               1 ~ '(2nd)',
+                               0 ~ '(3rd)',
+                               .default = NULL),
+         Points = rep(1:6,6)) %>%
+  unite('Player', Position, Player, sep=' ') %>%
+  pivot_wider(names_from = Team, values_from = Player) %>%
+  select(-Points)
+
+day1_summary <- day1_results %>%
+  group_by(Team) %>%
+  summarise(Points = sum(Points)) %>%
+  arrange(desc(Points))
+
+standings <- arrange(day1_summary,Team) %>%
+  arrange(desc(Points))
+
+mvp <- day1_results %>%
+  arrange(desc(Points)) %>%
+  mutate(Rank = 1:36, Team = NULL, .before=1)
 ```
 
 ```{r}
@@ -151,74 +120,74 @@ top_pick <- tibble(
   Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
   Car  = c('SS Maverick','SSS Fang','SSS Kobra','S Wild West','S Kobra','S Taxi')
 ) %>%
-  cbind(teams[,top])
+  cbind(day1_positions[,top])
 
-knitr::kable(top_pick, caption = "Top Bracket") %>%
-  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
-  column_spec(2, bold = TRUE, color = "white", background = "navy")
-```
-
-```{r}
 # match-up decision
 bot_pick <- tibble(
   Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
   Car  = c('S Centaur','SSS Fang','SSS Fang','SS Comet','S Kobra','S Bandit')
 ) %>%
-  cbind(teams[,bot])
+  cbind(day1_positions[,bot])
+```
 
-knitr::kable(bot_pick, caption = "Bottom Bracket") %>%
+
+Column {data-width=450}
+--------------
+### Top Bracket
+```{r}
+kable(top_pick) %>%
   kable_styling(bootstrap_options = c("striped", "condensed")) %>%
-  column_spec(2, bold = TRUE, color = "white", background = "navy")
+  column_spec(2, width='3cm', bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
+### Bottom Bracket
+```{r}
+kable(bot_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm',  bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
 ```
 
 
-## Results
-
+Column {data-width=125}
+--------------
+### Day 1 Standings
 ```{r}
-# read in points per team
-day1_raw <- read_csv('v2_xmas_results - Day1.csv') 
-
-day1_results <- bind_rows(getResults(day1_raw,1),
-                          getResults(day1_raw,2),
-                          getResults(day1_raw,3),
-                          getResults(day1_raw,4),
-                          getResults(day1_raw,5),
-                          getResults(day1_raw,6))
-
-day1_summary <- day1_results %>%
-  group_by(Team) %>%
-  summarise(Points = sum(Points)) %>%
-  arrange(desc(Points))
-
-standings <- arrange(day1_summary,Team) %>%
-  mutate(number=1:6,.before=1) %>%
-  arrange(desc(Points))
-```
-
-
-
-```{r}
-# make points table 
-knitr::kable(day1_summary, caption = "Day 1 Standings", align = c("r", "l")) %>%
+# points table 
+knitr::kable(day1_summary, align = c("r", "l")) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), 
                 full_width = F) %>%
-  column_spec(2, bold = TRUE, color = "white", background = "navy")
+  column_spec(1, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
+```
+### Overall Standings
+```{r}
+# points table 
+knitr::kable(standings, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(1, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
+```
+
+Column {data-width=175}
+--------------
+### MVP Standings
+```{r}
+# points table 
+knitr::kable(mvp, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, bold = TRUE, color = "white", background = "red3")
 ```
 
 
-# Day 2
+# Day 2 - Hairpin
 
 ```{r}
 # Day 2 matches
 top <- standings$number[1:3]
 bot <- standings$number[4:6]
-```
-
-```{r}
-getMatchups(data,top)
-```
-```{r}
-getMatchups(data,bot)
 ```
 
 ```{r}
@@ -229,9 +198,9 @@ top_pick <- tibble(
 ) %>%
   cbind(teams[,top])
 
-knitr::kable(top_pick, caption = "Top Bracket") %>%
+knitr::kable(top_pick) %>%
   kable_styling(bootstrap_options = c("striped", "condensed")) %>%
-  column_spec(2, bold = TRUE, color = "white", background = "navy")
+  column_spec(2, bold = TRUE, color = "white", background = "red3")
 ```
 
 ```{r}
@@ -244,7 +213,7 @@ bot_pick <- tibble(
 
 knitr::kable(bot_pick, caption = "Bottom Bracket") %>%
   kable_styling(bootstrap_options = c("striped", "condensed")) %>%
-  column_spec(2, bold = TRUE, color = "white", background = "navy")
+  column_spec(2, bold = TRUE, color = "white", background = "red3")
 ```
 
 
