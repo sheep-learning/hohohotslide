@@ -104,10 +104,12 @@ day1_positions <- day1_results %>%
 day1_summary <- day1_results %>%
   group_by(Team) %>%
   summarise(Points = sum(Points)) %>%
-  arrange(desc(Points))
+  arrange(desc(Points)) %>%
+  mutate(Rank = 1:6, .before=1)
 
 standings <- arrange(day1_summary,Team) %>%
-  arrange(desc(Points))
+  arrange(desc(Points)) %>%
+  mutate(Rank = 1:6, .before=1)
 
 mvp <- day1_results %>%
   arrange(desc(Points)) %>%
@@ -151,7 +153,7 @@ kable(bot_pick) %>%
 ```
 
 
-Column {data-width=125}
+Column {data-width=150}
 --------------
 ### Day 1 Standings
 ```{r}
@@ -159,7 +161,7 @@ Column {data-width=125}
 knitr::kable(day1_summary, align = c("r", "l")) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), 
                 full_width = F) %>%
-  column_spec(1, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
+  column_spec(2, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
 ```
 ### Overall Standings
 ```{r}
@@ -167,10 +169,10 @@ knitr::kable(day1_summary, align = c("r", "l")) %>%
 knitr::kable(standings, align = c("r", "l")) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), 
                 full_width = F) %>%
-  column_spec(1, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
+  column_spec(2, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
 ```
 
-Column {data-width=175}
+Column {data-width=150}
 --------------
 ### MVP Standings
 ```{r}
@@ -182,7 +184,6 @@ knitr::kable(mvp, align = c("r", "l")) %>%
 ```
 
 
-# Day 2 - Hairpin
 
 ```{r}
 # Day 2 matches
