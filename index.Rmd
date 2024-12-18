@@ -161,7 +161,7 @@ Column {data-width=125}
 knitr::kable(day1_summary, align = c("r", "l")) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), 
                 full_width = F) %>%
-  column_spec(2, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
 ```
 ### Overall Standings
 ```{r}
@@ -169,7 +169,7 @@ knitr::kable(day1_summary, align = c("r", "l")) %>%
 knitr::kable(standings, align = c("r", "l")) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), 
                 full_width = F) %>%
-  column_spec(2, width='3.5cm',  bold = TRUE, color = "white", background = "red3")
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
 ```
 
 Column {data-width=125}
@@ -180,7 +180,7 @@ Column {data-width=125}
 knitr::kable(mvp, align = c("r", "l")) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), 
                 full_width = F) %>%
-  column_spec(2, bold = TRUE, color = "white", background = "red3")
+  column_spec(2, width='4cm', bold = TRUE, color = "white", background = "red3")
 ```
 
 
@@ -190,4 +190,169 @@ knitr::kable(mvp, align = c("r", "l")) %>%
 
 
 
+
+# Day 2 - Hairpin
+
+```{r}
+# Day 2 matches
+brackets <- standings %>% arrange(Team) %>% mutate(number=1:6,.before=1) %>% arrange(desc(Points))
+
+top <- brackets$number[1:3]
+bot <- brackets$number[4:6]
+```
+
+```{r}
+# read in points per team
+day2_raw <- read_csv('data/v2_xmas_results - Day2.csv') 
+
+day2_results <- bind_rows(getResults(day2_raw,1),
+                          getResults(day2_raw,2),
+                          getResults(day2_raw,3),
+                          getResults(day2_raw,4),
+                          getResults(day2_raw,5),
+                          getResults(day2_raw,6)) 
+
+day2_positions <- day2_results %>%
+  mutate(Position = case_match(Points, 
+                               3 ~ '(1st)',
+                               1 ~ '(2nd)',
+                               0 ~ '(3rd)',
+                               .default = NULL),
+         Points = rep(1:6,6)) %>%
+  unite('Player', Position, Player, sep=' ') %>%
+  pivot_wider(names_from = Team, values_from = Player) %>%
+  select(-Points)
+
+day2_summary <- day2_results %>%
+  group_by(Team) %>%
+  summarise(Points = sum(Points)) %>%
+  arrange(desc(Points),Team) %>%
+  mutate(Rank = 1:6, .before=1)
+
+standings <- inner_join(standings,select(day2_summary,-Rank),by='Team') %>%
+  mutate(Points = Points.x + Points.y) %>%
+  select(-Points.x,-Points.y) %>%
+  arrange(desc(Points),Team) %>%
+  mutate(Rank = 1:6, .before=1)
+
+mvp <- inner_join(mvp,day2_results,by='Player') %>%
+  mutate(Points = Points.x + Points.y) %>%
+  select(-Points.x,-Points.y,-Team) %>%
+  arrange(desc(Points)) %>%
+  mutate(Rank = 1:36, .before=1)
+```
+
+```{r}
+# match-up decision
+top_pick <- tibble(
+  Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
+  Car  = c('SS Roamer','SSS Conq','SSS Conq','SS Mamba','S Kobra','S Bandit')
+) %>%
+  cbind(day2_positions[,top])
+
+# match-up decision
+bot_pick <- tibble(
+  Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
+  Car  = c('S Centaur','SSS Fang','SSS Bandit','S FireArrow','S Hornet','S Comet')
+) %>%
+  cbind(day2_positions[,bot])
+```
+
+
+Column {data-width=450}
+--------------
+### Top Bracket
+```{r}
+kable(top_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm', bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
+### Bottom Bracket
+```{r}
+kable(bot_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm',  bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
+
+Column {data-width=125}
+--------------
+### Day 2 Standings
+```{r}
+# points table 
+knitr::kable(day2_summary, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
+```
+### Overall Standings
+```{r}
+# points table 
+knitr::kable(standings, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
+```
+
+Column {data-width=125}
+--------------
+### MVP Standings
+```{r}
+# mvp table 
+knitr::kable(mvp, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',bold = TRUE, color = "white", background = "red3")
+```
+
+
+
+
+# Day 3 - Factory
+
+```{r}
+# Day 3 matches
+brackets <- standings %>% arrange(Team) %>% mutate(number=1:6,.before=1) %>% arrange(desc(Points))
+
+top <- brackets$number[1:3]
+bot <- brackets$number[4:6]
+```
+
+```{r}
+# match-up decision
+top_pick <- tibble(
+  Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
+  Car  = c('S Bison','SSS Conq','SSS Conq','SS Fang','S Fury','S Cyber')
+) %>%
+  cbind(teams[,top])
+
+# match-up decision
+bot_pick <- tibble(
+  Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
+  Car  = c('SS Mamba','SSS Predator','SS Leap','SS Comet','S Ghost','S Hornet')
+) %>%
+  cbind(teams[,bot])
+```
+
+Column {data-width=450}
+--------------
+### Top Bracket
+```{r}
+kable(top_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm', bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
+### Bottom Bracket
+```{r}
+kable(bot_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm',  bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
 
