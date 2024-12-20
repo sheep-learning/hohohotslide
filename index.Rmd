@@ -443,17 +443,136 @@ bot <- brackets$number[4:6]
 ```
 
 ```{r}
+# read in points per team
+day4_raw <- read_csv('data/v2_xmas_results - Day4.csv') 
+
+day4_results <- bind_rows(getResults(day4_raw,1),
+                          getResults(day4_raw,2),
+                          getResults(day4_raw,3),
+                          getResults(day4_raw,4),
+                          getResults(day4_raw,5),
+                          getResults(day4_raw,6)) 
+
+day4_positions <- day4_results %>%
+  mutate(Position = case_match(Points, 
+                               3 ~ '(1st)',
+                               1 ~ '(2nd)',
+                               0 ~ '(3rd)',
+                               .default = NULL),
+         Points = rep(1:6,6)) %>%
+  unite('Player', Position, Player, sep=' ') %>%
+  pivot_wider(names_from = Team, values_from = Player) %>%
+  select(-Points)
+
+day4_summary <- day4_results %>%
+  group_by(Team) %>%
+  summarise(Points = sum(Points)) %>%
+  arrange(desc(Points),Team) %>%
+  mutate(Rank = 1:6, .before=1)
+
+standings <- inner_join(standings,select(day4_summary,-Rank),by='Team') %>%
+  mutate(Points = Points.x + Points.y) %>%
+  select(-Points.x,-Points.y) %>%
+  arrange(desc(Points),Team) %>%
+  mutate(Rank = 1:6, .before=1)
+
+mvp <- inner_join(mvp,day4_results,by='Player') %>%
+  mutate(Points = Points.x + Points.y) %>%
+  select(-Points.x,-Points.y,-Team) %>%
+  arrange(desc(Points)) %>%
+  mutate(Rank = 1:36, .before=1)
+```
+
+```{r}
 # match-up decision
 top_pick <- tibble(
   Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
   Car  = c('SSS Thor','SSS Thor','SSS Fang','S Ghost','S Kobra','S Maverick')
+) %>%
+  cbind(day4_positions[,top])
+
+# match-up decision
+bot_pick <- tibble(
+  Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
+  Car  = c('S Time Machine','SSS Fang','SS Ghost','SS Thor','S Maverick','S Polluter')
+) %>%
+  cbind(day4_positions[,bot])
+```
+
+Column {data-width=450}
+--------------
+### Top Bracket
+```{r}
+kable(top_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm', bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
+### Bottom Bracket
+```{r}
+kable(bot_pick) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(2, width='3cm',  bold = TRUE, color = "white", background = "red3") %>%
+  column_spec(1, width='3cm') %>%
+  column_spec(3:5, width='4cm')
+```
+
+Column {data-width=125}
+--------------
+### Day 4 Standings
+```{r}
+# points table 
+knitr::kable(day4_summary, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
+```
+### Overall Standings
+```{r}
+# points table 
+knitr::kable(standings, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
+```
+
+Column {data-width=125}
+--------------
+### MVP Standings
+```{r}
+# mvp table 
+knitr::kable(mvp, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',bold = TRUE, color = "white", background = "red3")
+```
+
+
+
+
+# Day 5 - Atlantic
+
+```{r}
+# Day 3 matches
+brackets <- standings %>% arrange(Team) %>% mutate(number=1:6,.before=1) %>% arrange(desc(Points))
+
+top <- brackets$number[1:3]
+bot <- brackets$number[4:6]
+```
+
+```{r}
+# match-up decision
+top_pick <- tibble(
+  Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
+  Car  = c('SS Rodeo', 'SSS Conq', 'SS Rodeo', 'SS Safari', 'S Thor', 'S Memphis')
 ) %>%
   cbind(teams[,top])
 
 # match-up decision
 bot_pick <- tibble(
   Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
-  Car  = c('S Time Machine','SSS Fang','SS Ghost','SS Thor','S Maverick','S Polluter')
+  Car  = c('SS Mamba', 'SSS Glamour', 'SSS Conq', 'S Memphis', 'S Kobra', 'S Bandit')
 ) %>%
   cbind(teams[,bot])
 ```
@@ -476,6 +595,4 @@ kable(bot_pick) %>%
   column_spec(1, width='3cm') %>%
   column_spec(3:5, width='4cm')
 ```
-
-
 
