@@ -88,7 +88,8 @@ day1_results <- bind_rows(getResults(day1_raw,1),
                           getResults(day1_raw,3),
                           getResults(day1_raw,4),
                           getResults(day1_raw,5),
-                          getResults(day1_raw,6)) 
+                          getResults(day1_raw,6)) %>% 
+  mutate(Player = recode(Player,'Chungus'='Big Chungus','Gimme Luv'='Gimmie Luv'))
 
 day1_positions <- day1_results %>%
   mutate(Position = case_match(Points, 
@@ -110,6 +111,8 @@ day1_summary <- day1_results %>%
 standings <- arrange(day1_summary,Team) %>%
   arrange(desc(Points)) %>%
   mutate(Rank = 1:6, .before=1)
+
+standings1 <- standings
 
 mvp <- day1_results %>%
   arrange(desc(Points)) %>%
@@ -210,7 +213,8 @@ day2_results <- bind_rows(getResults(day2_raw,1),
                           getResults(day2_raw,3),
                           getResults(day2_raw,4),
                           getResults(day2_raw,5),
-                          getResults(day2_raw,6)) 
+                          getResults(day2_raw,6)) %>% 
+  mutate(Player = recode(Player,'Chungus'='Big Chungus','Gimme Luv'='Gimmie Luv')) 
 
 day2_positions <- day2_results %>%
   mutate(Position = case_match(Points, 
@@ -234,6 +238,9 @@ standings <- inner_join(standings,select(day2_summary,-Rank),by='Team') %>%
   select(-Points.x,-Points.y) %>%
   arrange(desc(Points),Team) %>%
   mutate(Rank = 1:6, .before=1)
+
+standings2 <- standings
+
 
 mvp <- inner_join(mvp,day2_results,by='Player') %>%
   mutate(Points = Points.x + Points.y) %>%
@@ -330,7 +337,8 @@ day3_results <- bind_rows(getResults(day3_raw,1),
                           getResults(day3_raw,3),
                           getResults(day3_raw,4),
                           getResults(day3_raw,5),
-                          getResults(day3_raw,6)) 
+                          getResults(day3_raw,6)) %>% 
+  mutate(Player = recode(Player,'Chungus'='Big Chungus','Gimme Luv'='Gimmie Luv')) 
 
 day3_positions <- day3_results %>%
   mutate(Position = case_match(Points, 
@@ -354,6 +362,9 @@ standings <- inner_join(standings,select(day3_summary,-Rank),by='Team') %>%
   select(-Points.x,-Points.y) %>%
   arrange(desc(Points),Team) %>%
   mutate(Rank = 1:6, .before=1)
+
+standings3 <- standings
+
 
 mvp <- inner_join(mvp,day3_results,by='Player') %>%
   mutate(Points = Points.x + Points.y) %>%
@@ -451,7 +462,8 @@ day4_results <- bind_rows(getResults(day4_raw,1),
                           getResults(day4_raw,3),
                           getResults(day4_raw,4),
                           getResults(day4_raw,5),
-                          getResults(day4_raw,6)) 
+                          getResults(day4_raw,6)) %>% 
+  mutate(Player = recode(Player,'Chungus'='Big Chungus','Gimme Luv'='Gimmie Luv')) 
 
 day4_positions <- day4_results %>%
   mutate(Position = case_match(Points, 
@@ -475,6 +487,9 @@ standings <- inner_join(standings,select(day4_summary,-Rank),by='Team') %>%
   select(-Points.x,-Points.y) %>%
   arrange(desc(Points),Team) %>%
   mutate(Rank = 1:6, .before=1)
+
+standings4 <- standings
+
 
 mvp <- inner_join(mvp,day4_results,by='Player') %>%
   mutate(Points = Points.x + Points.y) %>%
@@ -554,11 +569,56 @@ knitr::kable(mvp, align = c("r", "l")) %>%
 # Day 5 - Atlantic
 
 ```{r}
-# Day 3 matches
+# Day 5 matches
 brackets <- standings %>% arrange(Team) %>% mutate(number=1:6,.before=1) %>% arrange(desc(Points))
 
-top <- brackets$number[1:3]
-bot <- brackets$number[4:6]
+top <- c(1,4,6)#brackets$number[1:3]
+bot <- c(2,3,5)#brackets$number[4:6]
+```
+
+```{r}
+# read in points per team
+day5_raw <- read_csv('data/v2_xmas_results - Day5.csv') 
+
+day5_results <- bind_rows(getResults(day5_raw,1),
+                          getResults(day5_raw,2),
+                          getResults(day5_raw,3),
+                          getResults(day5_raw,4),
+                          getResults(day5_raw,5),
+                          getResults(day5_raw,6)) %>% 
+  mutate(Player = recode(Player,'Chungus'='Big Chungus','Gimme Luv'='Gimmie Luv')) 
+
+day5_positions <- day5_results %>%
+  mutate(Position = case_match(Points, 
+                               3 ~ '(1st)',
+                               1 ~ '(2nd)',
+                               0 ~ '(3rd)',
+                               .default = NULL),
+         Points = rep(1:6,6)) %>%
+  unite('Player', Position, Player, sep=' ') %>%
+  pivot_wider(names_from = Team, values_from = Player) %>%
+  select(-Points)
+
+day5_summary <- day5_results %>%
+  group_by(Team) %>%
+  summarise(Points = sum(Points)) %>%
+  arrange(desc(Points),Team) %>%
+  mutate(Rank = 1:6, .before=1)
+
+standings <- inner_join(standings,select(day5_summary,-Rank),by='Team') %>%
+  mutate(Points = Points.x + Points.y) %>%
+  select(-Points.x,-Points.y) %>%
+  arrange(desc(Points),Team) %>%
+  mutate(Rank = 1:6, .before=1)
+
+standings5 <- standings
+
+
+mvp <- inner_join(mvp,day5_results,by='Player') %>%
+  mutate(Points = Points.x + Points.y) %>%
+  select(-Points.x,-Points.y,-Team) %>%
+  arrange(desc(Points)) %>%
+  mutate(Rank = 1:36, .before=1)
 ```
 
 ```{r}
@@ -567,14 +627,14 @@ top_pick <- tibble(
   Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
   Car  = c('SS Rodeo', 'SSS Conq', 'SS Rodeo', 'SS Safari', 'S Thor', 'S Memphis')
 ) %>%
-  cbind(teams[,top])
+  cbind(day5_positions[,top])
 
 # match-up decision
 bot_pick <- tibble(
   Pool = c('Captain', 'Vice Captain', 'Pool 3', 'Pool 4', 'Pool 5', 'Pool 6'),
   Car  = c('SS Mamba', 'SSS Glamour', 'SSS Conq', 'S Memphis', 'S Kobra', 'S Bandit')
 ) %>%
-  cbind(teams[,bot])
+  cbind(day5_positions[,bot])
 ```
 
 Column {data-width=450}
@@ -595,4 +655,114 @@ kable(bot_pick) %>%
   column_spec(1, width='3cm') %>%
   column_spec(3:5, width='4cm')
 ```
+
+Column {data-width=125}
+--------------
+### Day 5 Standings
+```{r}
+# points table 
+knitr::kable(day5_summary, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
+```
+### Final Standings
+```{r}
+# points table 
+knitr::kable(standings, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',  bold = TRUE, color = "white", background = "red3")
+```
+
+Column {data-width=125}
+--------------
+### MVP Standings
+```{r}
+# mvp table 
+knitr::kable(mvp, align = c("r", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = F) %>%
+  column_spec(2, width='4cm',bold = TRUE, color = "white", background = "red3")
+```
+
+
+# Tournament Summary
+
+Column {data-width=300} 
+---------------------
+
+### Tournament Winners
+```{r}
+# mvp table 
+knitr::kable(standings, align = c("r", "l","l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = T) %>%
+  row_spec(1,background = 'gold') %>%
+  column_spec(2, width='4cm',bold = TRUE, color = "white", background = "red3") 
+```
+
+### MVP Winners
+```{r}
+# mvp table 
+knitr::kable(mvp, align = c("r", "l","l")) %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"), 
+                full_width = T) %>%
+  row_spec(1,background = 'gold') %>%
+  column_spec(2, width='4cm',bold = TRUE, color = "white", background = "red3") 
+```
+
+
+
+Column {data-width=600} 
+---------------------
+### Team Standings by Day
+```{r}
+# combine results tables for daily results
+
+daily_results <- rbind(standings1,
+                       standings2,
+                       standings3,
+                       standings4,
+                       standings5) %>%
+  mutate(Rank=factor(rep(1:5,each=6),levels=1:5)) %>%
+  rename(Day=Rank)
+
+
+# plot daily
+ggplotly(
+  ggplot(daily_results, aes(Day,Points,fill=Team)) +
+    geom_col(position = 'dodge',colour='black') +
+    geom_vline(xintercept = seq(1.5,5.5)) +
+    scale_fill_manual(values = c('lightgreen','orange','magenta','gold','skyblue','red3'))+
+    theme_minimal() +
+    labs(title='Team Standings by Day',y='Cumulative Points'),
+  tooltip = c('fill','y')
+  )
+
+```
+
+### Pool MVPs
+```{r}
+# combine results tables for pool results
+pool_mvp <- mvp %>%
+  left_join(select(day1_results,Player,Team),by='Player') %>%
+  left_join(select(data,Player=Name,Pool=Bracket),by='Player') 
+
+
+# plot pools
+ggplotly(
+  ggplot(pool_mvp, aes(Team,Points,fill=Team,extra=Player)) +
+    geom_bar(position = 'dodge',stat='identity',colour='black') +
+    scale_fill_manual(values = c('lightgreen','orange','magenta','gold','skyblue','red3')) +
+    facet_wrap(vars(Pool),nrow=2) +
+    theme_minimal() +
+    labs(title='Pool MVPs',y='Total Points',x='Pools') +
+    theme(axis.text.x = element_blank()),
+  tooltip='extra'
+)
+
+```
+
+
 
